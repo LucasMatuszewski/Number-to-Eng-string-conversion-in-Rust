@@ -37,6 +37,32 @@
 1,234,567,899 -> eight hundred and ninety-nine, five hundred and sixty-seven, two hundred and thirty-four, one billion million thousand
 */
 
+// Second fixes made by GPT-4o resulted in error:
+/*
+error[E0382]: borrow of moved value: `chunk_words`
+   --> src/main.rs:116:22
+    |
+109 |         let chunk_words = chunk_to_words(*chunk, units, teens, tens);
+    |             -----------   ------------------------------------------ this reinitialization might get skipped
+    |             |
+    |             move occurs because `chunk_words` has type `String`, which does not implement the `Copy` trait
+...
+113 |             words = chunk_words;
+    |                     ----------- value moved here
+...
+116 |         if i > 0 && !chunk_words.is_empty() {
+    |                      ^^^^^^^^^^^ value borrowed here after move
+    |
+help: consider cloning the value if the performance cost is acceptable
+    |
+113 |             words = chunk_words.clone();
+    |                                ++++++++
+
+For more information about this error, try `rustc --explain E0382`.
+error: could not compile `my-project` (bin "my-project") due to 1 previous error
+*/
+
+
 
 use std::collections::HashMap;
 
@@ -100,6 +126,8 @@ fn integer_to_words(n: &str, units: &HashMap<u32, &str>, teens: &HashMap<u32, &s
     let mut words = String::new();
     let chunks = split_number_into_chunks(num);
 
+    let scales = ["", "thousand", "million", "billion"];
+
     for (i, chunk) in chunks.iter().enumerate().rev() {
         if *chunk == 0 {
             continue;
@@ -107,19 +135,13 @@ fn integer_to_words(n: &str, units: &HashMap<u32, &str>, teens: &HashMap<u32, &s
 
         let chunk_words = chunk_to_words(*chunk, units, teens, tens);
         if !words.is_empty() {
-            words = format!("{}, {}", chunk_words, words);
+            words = format!("{}, {}", words, chunk_words);
         } else {
             words = chunk_words;
         }
 
-        if i > 0 {
-            let scale = match i {
-                1 => "thousand",
-                2 => "million",
-                3 => "billion",
-                _ => "",
-            };
-            words = format!("{} {}", words, scale);
+        if i > 0 && !chunk_words.is_empty() {
+            words = format!("{} {}", words, scales[i]);
         }
     }
 

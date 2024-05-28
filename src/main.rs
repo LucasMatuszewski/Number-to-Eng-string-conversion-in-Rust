@@ -81,6 +81,7 @@ fn number_to_words(n: &str) -> String {
     result.trim().to_string()
 }
 
+// fixed by Replit AI, but it doesn't add commas in english strings
 fn integer_to_words(
     n: &str,
     units: &HashMap<u32, &str>,
@@ -93,33 +94,28 @@ fn integer_to_words(
         return "zero".to_string();
     }
 
-    let mut words = String::new();
+    let mut words = Vec::new();
     let chunks = split_number_into_chunks(num);
+    let scales = ["", "thousand", "million", "billion"];
 
-    for (i, chunk) in chunks.iter().enumerate() {
+    for (i, chunk) in chunks.iter().enumerate().rev() {
+        // Start from the largest chunk
         if *chunk == 0 {
             continue;
         }
 
         let chunk_words = chunk_to_words(*chunk, units, teens, tens);
-        if !words.is_empty() {
-            words = format!("{}, {}", chunk_words, words);
-        } else {
-            words = chunk_words;
-        }
+        let scale = scales[i].to_string();
 
-        if i > 0 {
-            let scale = match i {
-                1 => "thousand",
-                2 => "million",
-                3 => "billion",
-                _ => "",
-            };
-            words = format!("{} {}", scale, words);
+        if !chunk_words.is_empty() {
+            words.push(chunk_words);
+            if !scale.is_empty() {
+                words.push(scale);
+            }
         }
     }
 
-    words
+    words.join(" ")
 }
 
 fn chunk_to_words(
